@@ -1,4 +1,9 @@
 <?php
+/**
+ * @author    Packeta www.packeta.com <business@packeta.com>
+ * @copyright 2021 Packeta Ltd.
+ * @license   MIT
+ */
 
 require_once(dirname(__FILE__).'/../../config/config.inc.php');
 require_once(dirname(__FILE__).'/../../init.php');

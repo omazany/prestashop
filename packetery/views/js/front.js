@@ -1,3 +1,7 @@
+/****************************************************************************
+ * Copyright 2021 | Packeta Ltd. | https://www.packeta.com
+ ****************************************************************************/
+
 PacketaModule = window.PacketaModule || {};
 
 PacketaModule.tools = {

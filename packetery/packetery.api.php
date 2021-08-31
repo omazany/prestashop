@@ -447,7 +447,7 @@ class PacketeryApi
             $apiKey = Configuration::get('PACKETERY_APIPASS');
         }
 
-        return substr($apiKey, 0, 16);
+        return Tools::substr($apiKey, 0, 16);
     }
 
     public static function getApiPass($apiPassword = false)

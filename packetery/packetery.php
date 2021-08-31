@@ -22,13 +22,14 @@
  *  @copyright 2017 Zlab Solutions
  *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
 include_once(dirname(__file__).'/packetery.class.php');
 include_once(dirname(__file__).'/packetery.api.php');
-require_once __DIR__ . '/autoload.php';
+require_once dirname(__FILE__) . '/autoload.php';
 
 /*
  * Do not use "use" PHP keyword. PS 1.6 can not load main plugin files with the keyword in them.
@@ -189,7 +190,6 @@ class Packetery extends CarrierModule
         $this->context->smarty->assign('langs', $langs);
 
         $this->context->smarty->assign('module_dir', $this->_path);
-        $id_employee = $this->context->employee->id;
         $settings = Configuration::getMultiple([
             'PACKETERY_APIPASS',
             'PACKETERY_ESHOP_ID',
@@ -379,6 +379,7 @@ class Packetery extends CarrierModule
 
     public function getOrderShippingCost($params, $shipping_cost)
     {
+        isset($params); // validator complains about unused param
         return $shipping_cost;
     }
 
@@ -388,6 +389,7 @@ class Packetery extends CarrierModule
      */
     public function getOrderShippingCostExternal($cart)
     {
+        isset($cart); // validator complains about unused param
         return 0;
     }
 
@@ -470,7 +472,7 @@ class Packetery extends CarrierModule
         if (!empty($cart->id_address_delivery)) {
             $address = new AddressCore($cart->id_address_delivery);
             $countryIso = CountryCore::getIsoById($address->id_country);
-            $customerCountry = strtolower($countryIso);
+            $customerCountry = Tools::strtolower($countryIso);
         }
 
         $deliveryPointCarriers = Db::getInstance()->executeS(
@@ -483,7 +485,7 @@ class Packetery extends CarrierModule
         /* Get language from cart, global $language updates weirdly */
         $language = new LanguageCore($cart->id_lang);
         $shopLanguage = $language->iso_code ?: 'en';
-        $shopLanguage = strtolower($shopLanguage);
+        $shopLanguage = Tools::strtolower($shopLanguage);
 
         $baseUri = __PS_BASE_URI__ === '/' ? '' : Tools::substr(__PS_BASE_URI__, 0, Tools::strlen(__PS_BASE_URI__) - 1);
 
@@ -527,7 +529,8 @@ class Packetery extends CarrierModule
             'front.js?v=' . $this->version,
         ];
 
-        $iterator = new GlobIterator(__DIR__ . '/views/js/checkout-modules/*.js', FilesystemIterator::CURRENT_AS_FILEINFO);
+        $iterator = new GlobIterator(dirname(__FILE__) . '/views/js/checkout-modules/*.js',
+                                     FilesystemIterator::CURRENT_AS_FILEINFO);
         foreach($iterator as $entry) {
             $js[] = 'checkout-modules/' . $entry->getBasename() . '?v=' . $this->version;
         }
@@ -632,7 +635,7 @@ class Packetery extends CarrierModule
         $widgetOptions = [
             'api_key' => $apiKey,
             'app_identity' => Packeteryclass::getAppIdentity($this->version),
-            'country' => strtolower($packeteryOrder['country']),
+            'country' => Tools::strtolower($packeteryOrder['country']),
             'module_dir' => _MODULE_DIR_,
             'lang' => Language::getIsoById($employee ? $employee->id_lang : Configuration::get('PS_LANG_DEFAULT')),
         ];

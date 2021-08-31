@@ -1,3 +1,7 @@
+/****************************************************************************
+ * Copyright 2021 | Packeta Ltd. | https://www.packeta.com
+ ****************************************************************************/
+
 // naming convention: PacketerCheckoutModule + moduleId (first letter in upper case)
 
 var PacketeryCheckoutModulePs16 = {

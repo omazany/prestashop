@@ -1,3 +1,8 @@
+{**
+* @author    Packeta www.packeta.com <business@packeta.com>
+* @copyright 2021 Packeta Ltd.
+* @license   MIT
+ *}
 <div class="card mt-2 packetery panel" id="packetaPickupPointChange">
     <div class="card-header">
         <h3 class="card-header-title">

@@ -26,12 +26,12 @@
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-function upgrade_module_2_1_3($object)
+function upgrade_module_2_1_3()
 {
     $oldSettings = Db::getInstance()->executeS('SELECT * FROM `' . _DB_PREFIX_ . 'packetery_settings`');
     $insertData = [];
     foreach ($oldSettings as $oldSetting) {
-        switch (strtoupper($oldSetting['option'])) {
+        switch (Tools::strtoupper($oldSetting['option'])) {
             case 'APIKEY':
                 // no longer needed
                 break;

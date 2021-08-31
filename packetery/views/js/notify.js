@@ -1,3 +1,7 @@
+/****************************************************************************
+ * Copyright 2021 | Packeta Ltd. | https://www.packeta.com
+ ****************************************************************************/
+
 (function (factory) {
 	// UMD start
 	// https://github.com/umdjs/umd/blob/master/jqueryPluginCommonjs.js

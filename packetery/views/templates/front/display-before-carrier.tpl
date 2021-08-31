@@ -1,9 +1,14 @@
-{*
- This file is inserted before the list of shipping methods:
- * PS 1.6: 5-steps checkout
- * PS 1.6: OPC - twice! order-opc.js inserts this html first along with all carrier html and then again, separately only this html
- * PS 1.7
-*}
+{**
+* This file is inserted before the list of shipping methods:
+* PS 1.6: 5-steps checkout
+* PS 1.6: OPC - twice! order-opc.js inserts this html first along with all carrier html and then again, separately only this html
+* PS 1.7
+*
+* @author    Packeta www.packeta.com <business@packeta.com>
+* @copyright 2021 Packeta Ltd.
+* @license   MIT
+ *}
+
 <script type="text/javascript">
     PacketaModule = window.PacketaModule || { };
 

@@ -1,4 +1,11 @@
 <?php
+/**
+ * Upgrades module to version 2.1.7
+ *
+ * @author    Packeta www.packeta.com <business@packeta.com>
+ * @copyright 2021 Packeta Ltd.
+ * @license   MIT
+ */
 
 use Packetery\Order\OrderRepository;
 
