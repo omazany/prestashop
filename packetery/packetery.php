@@ -492,7 +492,7 @@ class Packetery extends CarrierModule
         $isPS16 = strpos(_PS_VERSION_, '1.6') === 0;
         $isOpcEnabled = (bool) Configuration::get('PS_ORDER_PROCESS_TYPE');
 
-        $this->context->smarty->assign('packetaModuleConfig', [
+        $this->context->smarty->assign('packetaModuleConfig', json_encode([
             'baseUri' => $baseUri,
             'apiKey' => PacketeryApi::getApiKey(),
             'frontAjaxToken' => Tools::getToken('ajax_front'),
@@ -513,11 +513,17 @@ class Packetery extends CarrierModule
 
             'widgetAutoOpen' => (bool) Configuration::get('PACKETERY_WIDGET_AUTOOPEN'),
             'toggleExtraContent' => false, // (bool) Configuration::get('PACKETERY_TOGGLE_EXTRA_CONTENT'),
-        ]);
+        ]));
 
         $this->context->smarty->assign('mustSelectPointText', $this->l('Please select pickup point'));
 
-        return $this->context->smarty->fetch($this->local_path . 'views/templates/front/display-before-carrier.tpl');
+        // same effect as nofilter flag, prevents " to be turned to &quot; in PS 1.7
+        $escapeHtml = $this->context->smarty->escape_html;
+        $this->context->smarty->escape_html = false;
+        $html = $this->context->smarty->fetch($this->local_path . 'views/templates/front/display-before-carrier.tpl');
+        $this->context->smarty->escape_html = $escapeHtml;
+
+        return $html;
     }
 
     /**
@@ -649,7 +655,7 @@ class Packetery extends CarrierModule
         } else if ($packeteryCarrier['pickup_point_type'] === 'internal') {
             $widgetOptions['carriers'] = 'packeta';
         }
-        $this->context->smarty->assign('widgetOptions', $widgetOptions);
+        $this->context->smarty->assign('widgetOptions', json_encode($widgetOptions));
         $this->context->smarty->assign('orderId', $orderId);
         $this->context->smarty->assign('returnUrl', $this->getAdminLink($orderId));
     }

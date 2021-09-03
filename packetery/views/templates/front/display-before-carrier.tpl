@@ -12,8 +12,7 @@
 <script type="text/javascript">
     PacketaModule = window.PacketaModule || { };
 
-    {* json_encode writes PHP array to JS object, nofilter prevents " to be turned to &quot; in PS 1.7 *}
-    PacketaModule.config = {$packetaModuleConfig|json_encode nofilter};
+    PacketaModule.config = {$packetaModuleConfig};
 
     if (typeof PacketaModule.runner !== 'undefined') {
         PacketaModule.runner.onBeforeCarrierLoad();

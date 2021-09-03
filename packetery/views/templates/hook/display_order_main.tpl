@@ -35,7 +35,7 @@
                 <form action="{$returnUrl}" method="post">
                     <p>
                         <a href="" class="btn btn-outline-secondary btn-default open-packeta-widget"
-                           data-widget-options="{$widgetOptions|@json_encode|escape}">{l s='Change pickup point' mod='packetery'}</a>
+                           data-widget-options="{$widgetOptions|escape:'html':'UTF-8'}">{l s='Change pickup point' mod='packetery'}</a>
 
                         <input type="hidden" name="order_id" value="{$orderId|intval}">
                         <input type="hidden" name="pickup_point">
