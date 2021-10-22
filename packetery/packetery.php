@@ -288,6 +288,7 @@ class Packetery extends CarrierModule
                     array('content' => $this->l('Exported'), 'key' => 'exported', 'bool' => true, 'center' => true),
                     array('content' => $this->l('Tracking number'), 'key' => 'tracking_number', 'center' => true),
                     array('content' => $this->l('Weight (kg)'), 'key' => 'weight', 'center' => true),
+                    array('content' => $this->l('Address validated'), 'key' => 'address_validated', 'bool' => true, 'center' => true),
                 ),
                 'rows' => $packetery_orders,
                 'url_params' => array('configure' => $this->name),
@@ -503,8 +504,12 @@ class Packetery extends CarrierModule
         }
         $this->context->smarty->assign('widget_carriers', $widgetCarriers);
 
+        $addressValidationSetting = Configuration::get('PACKETERY_ADDRESS_VALIDATION');
+        if (!empty($cart) && ($packeteryCarrier['pickup_point_type'] !== null || $addressValidationSetting !== 'none')) {
+            $orderData = $this->orderRepository->getByCartAndCarrier((int)$cart->id, (int)$id_carrier);
+        }
+
         if ($packeteryCarrier['pickup_point_type'] === null) {
-            $addressValidationSetting = Configuration::get('PACKETERY_ADDRESS_VALIDATION');
             if ($addressValidationSetting === 'none') {
                 $output = '';
             } else {
@@ -512,6 +517,14 @@ class Packetery extends CarrierModule
                 $this->context->smarty->assign('customerCity', $customerCity);
                 $this->context->smarty->assign('customerZip', $customerZip);
                 $this->context->smarty->assign('addressValidationSetting', $addressValidationSetting);
+                $addressValidated = false;
+                // if widget returned an address which was later saved, it is considered as valid
+                if ($orderData && $orderData['zip']) {
+                    $addressValidated = true;
+                }
+                $this->context->smarty->assign('addressValidated', $addressValidated);
+                $this->context->smarty->assign('addressValidatedMessage', $this->l('Address is valid.'));
+                $this->context->smarty->assign('addressNotValidatedMessage', $this->l('Address is not valid.'));
 
                 $output = $this->context->smarty->fetch($this->local_path . 'views/templates/front/widget-hd.tpl');
             }
@@ -529,19 +542,16 @@ class Packetery extends CarrierModule
             $pickupPointType = 'internal';
             $carrierId = '';
             $carrierPickupPointId = '';
-            if (!empty($cart)) {
-                $row = Db::getInstance()->getRow('SELECT * FROM ' . _DB_PREFIX_ . 'packetery_order WHERE id_cart =' . (int)$cart->id . ' AND id_carrier = ' . (int)$id_carrier);
-                if ($row) {
-                    $name_branch = $row['name_branch'];
-                    $currency_branch = $row['currency_branch'];
-                    $carrierPickupPointId = $row['carrier_pickup_point'];
-                    if ($row['is_carrier'] == 1) {
-                        $id_branch = $row['carrier_pickup_point']; // to be consistent with widget behavior
-                        $pickupPointType = 'external';
-                        $carrierId = $row['id_branch'];
-                    } else {
-                        $id_branch = $row['id_branch'];
-                    }
+            if ($orderData) {
+                $name_branch = $orderData['name_branch'];
+                $currency_branch = $orderData['currency_branch'];
+                $carrierPickupPointId = $orderData['carrier_pickup_point'];
+                if ($orderData['is_carrier'] == 1) {
+                    $id_branch = $orderData['carrier_pickup_point']; // to be consistent with widget behavior
+                    $pickupPointType = 'external';
+                    $carrierId = $orderData['id_branch'];
+                } else {
+                    $id_branch = $orderData['id_branch'];
                 }
             }
             $this->context->smarty->assign('id_branch', $id_branch);
@@ -605,29 +615,14 @@ class Packetery extends CarrierModule
     public function packeteryHookDisplayAdminOrder($params)
     {
         $messages = [];
-        if (
-            Tools::isSubmit('pickup_point_change') &&
-            Tools::getIsset('pickup_point') &&
-            Tools::getValue('pickup_point') !== ''
-        ) {
-            $updateResult = $this->savePickupPointChange();
-            if ($updateResult) {
-                $messages[] = [
-                    'text' => $this->l('Pickup point has been successfully changed.'),
-                    'class' => 'success',
-                ];
-            } else {
-                $messages[] = [
-                    'text' => $this->l('Pickup point could not be changed.'),
-                    'class' => 'danger',
-                ];
-            }
-        }
+        $this->processPickupPointChange($messages);
+        $this->processAddressChange($messages);
 
         $apiKey = PacketeryApi::getApiKey();
         $packeteryOrder = Db::getInstance()->getRow(
             'SELECT `po`.`id_carrier`, `po`.`id_branch`, `po`.`name_branch`, `po`.`is_ad`, `po`.`is_carrier`,
-                    `c`.`iso_code` AS `country`
+                    `po`.`country`, `po`.`street`, `po`.`house_number`, `po`.`city`, `po`.`zip`, `po`.`county`, `po`.`latitude`, `po`.`longitude`,
+                    `c`.`iso_code` AS `ps_country`
             FROM `' . _DB_PREFIX_ . 'packetery_order` `po`
             JOIN `' . _DB_PREFIX_ . 'orders` `o` ON `o`.`id_order` = `po`.`id_order`
             JOIN `' . _DB_PREFIX_ . 'address` `a` ON `a`.`id_address` = `o`.`id_address_delivery` 
@@ -645,19 +640,62 @@ class Packetery extends CarrierModule
             ];
             // TODO try to open widget automatically
         }
-        $this->context->smarty->assign('messages', $messages);
 
         $isAddressDelivery = (bool)$packeteryOrder['is_ad'];
         $this->context->smarty->assign('isAddressDelivery', $isAddressDelivery);
         $this->context->smarty->assign('pickupPointOrAddressDeliveryName', $packeteryOrder['name_branch']);
         $pickupPointChangeAllowed = false;
 
-        if (!$isAddressDelivery && (int)$packeteryOrder['id_carrier'] !== 0) {
+        // todo 405 zobrazit pro všechny HD metody jako možnost změny adresy?
+        if ($isAddressDelivery) {
+            if($packeteryOrder['zip']) {
+                $this->context->smarty->assign('validatedAddress', [
+                    'street' => $packeteryOrder['street'],
+                    'houseNumber' => $packeteryOrder['house_number'],
+                    'city' => $packeteryOrder['city'],
+                    'zip' => $packeteryOrder['zip'],
+                    'county' => $packeteryOrder['county'],
+                    'latitude' => $packeteryOrder['latitude'],
+                    'longitude' => $packeteryOrder['longitude'],
+                ]);
+                if ($packeteryOrder['country'] !== strtolower($packeteryOrder['ps_country'])) {
+                    $messages[] = [
+                        'text' => $this->l('The selected delivery address is in a country other than the country of delivery of the order.'),
+                        'class' => 'danger',
+                    ];
+                }
+                $this->prepareAddressChange($apiKey, $packeteryOrder, (int)$params['id_order']);
+            }
+        } else if ((int)$packeteryOrder['id_carrier'] !== 0) {
             $this->preparePickupPointChange($apiKey, $packeteryOrder, (int)$params['id_order']);
             $pickupPointChangeAllowed = true;
         }
+        $this->context->smarty->assign('messages', $messages);
         $this->context->smarty->assign('pickupPointChangeAllowed', $pickupPointChangeAllowed);
         return $this->display(__FILE__, 'display_order_main.tpl');
+    }
+
+    /**
+     * @param string $apiKey
+     * @param array $packeteryOrder
+     * @param int $orderId
+     */
+    private function prepareAddressChange($apiKey, $packeteryOrder, $orderId)
+    {
+        $employee = Context::getContext()->employee;
+        $widgetOptions = [
+            'apiKey' => $apiKey,
+            'country' => strtolower($packeteryOrder['ps_country']),
+            'language' => Language::getIsoById($employee ? $employee->id_lang : Configuration::get('PS_LANG_DEFAULT')),
+            'carrierId' => $packeteryOrder['id_branch'],
+            'street' => $packeteryOrder['street'],
+            'houseNumber' => $packeteryOrder['house_number'],
+            'city' => $packeteryOrder['city'],
+            'zip' => $packeteryOrder['zip'],
+        ];
+        $this->context->smarty->assign('widgetOptions', $widgetOptions);
+        $this->context->smarty->assign('orderId', $orderId);
+        $this->context->smarty->assign('returnUrl', $this->getAdminLink($orderId));
     }
 
     /**
@@ -703,6 +741,33 @@ class Packetery extends CarrierModule
         }
         // Recommended code from PrestaShop 1.7.5
         return $this->context->link->getAdminLink('AdminOrders', true, [], ['id_order' => $orderId, 'vieworder' => 1]) . '#packetaPickupPointChange';
+    }
+
+    /**
+     * @return bool
+     */
+    private function saveAddressChange()
+    {
+        $orderId = (int)Tools::getValue('order_id');
+        $address = json_decode(Packetery\Tools\Tools::getValue('address'));
+        if (!$address) {
+            return false;
+        }
+
+        $address = (array) $address;
+
+        $packeteryOrderFields = [
+            'is_ad' => 1,
+            'country' => $address['country'],
+            'county' => $address['county'],
+            'zip' => $address['postcode'],
+            'city' => $address['city'],
+            'street' => $address['street'],
+            'house_number' => $address['houseNumber'],
+            'latitude' => $address['latitude'],
+            'longitude' => $address['longitude'],
+        ];
+        return (bool)Db::getInstance()->update('packetery_order', $packeteryOrderFields, '`id_order` = ' . $orderId);
     }
 
     /**
@@ -763,6 +828,7 @@ class Packetery extends CarrierModule
             'displayOrderDetail',
             'sendMailAlterTemplateVars',
             'actionObjectOrderUpdateBefore',
+            'actionValidateStepComplete',
         ];
         if (Tools::version_compare(_PS_VERSION_, '1.7.7', '<')) {
             $hooks[] = 'displayAdminOrderLeft';
@@ -871,6 +937,93 @@ class Packetery extends CarrierModule
     public function hookActionObjectOrderUpdateBefore($params)
     {
         $this->actionObjectOrderUpdateBefore->execute($params);
+    }
+
+    /**
+     * @param array $params
+     */
+    public function hookActionValidateStepComplete(&$params)
+    {
+        if (Configuration::get('PACKETERY_ADDRESS_VALIDATION') !== 'required') {
+            $params['completed'] = true;
+            return;
+        }
+
+        if (empty($params['cart'])) {
+            // todo 405 translate?
+            $this->context->controller->errors[] = 'Cart is not present in hook parameters.';
+            $params['completed'] = false;
+            return;
+        }
+
+        $orderData = $this->orderRepository->getByCart((int)$params['cart']->id);
+        if (!$orderData) {
+            // todo 405 translate?
+            $this->context->controller->errors[] = 'Packeta order could not be loaded by cart id.';
+            $params['completed'] = false;
+            return;
+        }
+
+        if (!$orderData['is_ad']) {
+            $params['completed'] = true;
+            return;
+        }
+
+        // if widget returned an address which was later saved, it is considered as valid
+        if (!$orderData['zip']) {
+            $this->context->controller->errors[] = $this->l('Please use widget to validate address.');
+            $params['completed'] = false;
+        }
+    }
+
+    /**
+     * @param array $messages
+     */
+    private function processPickupPointChange(array &$messages)
+    {
+        if (
+            Tools::isSubmit('pickup_point_change') &&
+            Tools::getIsset('pickup_point') &&
+            Tools::getValue('pickup_point') !== ''
+        ) {
+            $updateResult = $this->savePickupPointChange();
+            if ($updateResult) {
+                $messages[] = [
+                    'text' => $this->l('Pickup point has been successfully changed.'),
+                    'class' => 'success',
+                ];
+            } else {
+                $messages[] = [
+                    'text' => $this->l('Pickup point could not be changed.'),
+                    'class' => 'danger',
+                ];
+            }
+        }
+    }
+
+    /**
+     * @param array $messages
+     */
+    private function processAddressChange(array &$messages)
+    {
+        if (
+            Tools::isSubmit('address_change') &&
+            Tools::getIsset('address') &&
+            Tools::getValue('address') !== ''
+        ) {
+            $updateResult = $this->saveAddressChange();
+            if ($updateResult) {
+                $messages[] = [
+                    'text' => $this->l('Address has been successfully changed.'),
+                    'class' => 'success',
+                ];
+            } else {
+                $messages[] = [
+                    'text' => $this->l('Address could not be changed.'),
+                    'class' => 'danger',
+                ];
+            }
+        }
     }
 
 }

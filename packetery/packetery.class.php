@@ -135,7 +135,7 @@ class Packeteryclass
      */
     public static function getPacketeryOrderRow($id_order)
     {
-        $sql = 'SELECT `id_branch`, `id_carrier`, `is_cod`, `is_ad`, `currency_branch`, `is_carrier`, `carrier_pickup_point`, `weight` 
+        $sql = 'SELECT `id_branch`, `id_carrier`, `is_cod`, `is_ad`, `currency_branch`, `is_carrier`, `carrier_pickup_point`, `weight`, `zip`, `city`, `street` 
                     FROM `' . _DB_PREFIX_ . 'packetery_order` 
                     WHERE id_order = ' . (int)$id_order;
 
@@ -184,7 +184,8 @@ class Packeteryclass
                     `po`.`exported`,
                     `po`.`tracking_number`,
                     `po`.`is_ad`,
-                    `po`.`weight`
+                    `po`.`weight`,
+                    `po`.`zip`
                 FROM `' . _DB_PREFIX_ . 'orders` `o`
                     JOIN `' . _DB_PREFIX_ . 'packetery_order` `po` ON `po`.`id_order` = `o`.`id_order`
                     JOIN `' . _DB_PREFIX_ . 'customer` `c` ON `c`.`id_customer` = `o`.`id_customer`
@@ -210,8 +211,10 @@ class Packeteryclass
                 if ($order['weight'] === null) {
                     $orderInstance = new \Order($order['id_order']);
                     $order['weight'] = Converter::getKilograms($orderInstance->getTotalWeight());
-                    $orders[$index] = $order;
                 }
+                // todo 405 rename method or save validation result
+                $order['address_validated'] = (bool) $order['zip'];
+                $orders[$index] = $order;
             }
         }
         return $orders;
@@ -280,16 +283,27 @@ class Packeteryclass
                 'SenderLabel' => $senderLabel,
                 'AdultContent' => "",
                 'DelayedDelivery' => "",
-                'Street' => $address['address1'],
+                'Street' => '',
                 'House Number' => '',
-                'City' => $address['city'],
-                'ZIP' => $address['postcode'],
+                'City' => '',
+                'ZIP' => '',
                 'CarrierPickupPoint' => $packeteryOrder['carrier_pickup_point'],
                 'Width' => "",
                 'Height' => "",
                 'Depth' => "",
                 'Note' => "",
             ];
+            if ($packeteryOrder['is_ad']) {
+                if ($packeteryOrder['zip'] && $packeteryOrder['city'] && $packeteryOrder['street']) {
+                    $data[$order_id]['ZIP'] = $packeteryOrder['zip'];
+                    $data[$order_id]['City'] = $packeteryOrder['city'];
+                    $data[$order_id]['Street'] = $packeteryOrder['street'];
+                } else {
+                    $data[$order_id]['ZIP'] = str_replace(' ', '', $address['postcode']);
+                    $data[$order_id]['City'] = $address['city'];
+                    $data[$order_id]['Street'] = $address['address1'];
+                }
+            }
 
             self::setPacketeryExport($order_id, TRUE);
         }
