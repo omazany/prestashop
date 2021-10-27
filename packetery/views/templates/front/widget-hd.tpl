@@ -10,6 +10,7 @@
     <input type="hidden" id="addressValidated" name="addressValidated" value="{$addressValidated|escape:'htmlall':'UTF-8'}">
     <input type="hidden" id="addressValidatedMessage" name="addressValidatedMessage" value="{$addressValidatedMessage|escape:'htmlall':'UTF-8'}">
     <input type="hidden" id="addressNotValidatedMessage" name="addressNotValidatedMessage" value="{$addressNotValidatedMessage|escape:'htmlall':'UTF-8'}">
+    <input type="hidden" id="countryDiffersMessage" name="countryDiffersMessage" value="{$countryDiffersMessage|escape:'htmlall':'UTF-8'}">
     <div id="packetery-widget" class="clearfix">
         <div class="widget-left">
             <div class="col-md-12">

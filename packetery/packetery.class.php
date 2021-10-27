@@ -23,6 +23,7 @@
  * @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
+use Packetery\Address\AddressTools;
 use Packetery\Exceptions\SenderGetReturnRoutingException;
 use Packetery\Weight\Converter;
 
@@ -135,7 +136,8 @@ class Packeteryclass
      */
     public static function getPacketeryOrderRow($id_order)
     {
-        $sql = 'SELECT `id_branch`, `id_carrier`, `is_cod`, `is_ad`, `currency_branch`, `is_carrier`, `carrier_pickup_point`, `weight`, `zip`, `city`, `street` 
+        $sql = 'SELECT `id_branch`, `id_carrier`, `is_cod`, `is_ad`, `currency_branch`, `is_carrier`,
+                    `carrier_pickup_point`, `weight`, `zip`, `city`, `street` 
                     FROM `' . _DB_PREFIX_ . 'packetery_order` 
                     WHERE id_order = ' . (int)$id_order;
 
@@ -193,7 +195,7 @@ class Packeteryclass
                 ORDER BY `o`.`date_add` DESC LIMIT ' . (($page - 1) * $per_page) . ',' . $per_page;
         $orders = Db::getInstance()->executeS($sql);
 
-        $orders = self::loadWeightToOrders($orders);
+        $orders = self::addDynamicDataToOrders($orders);
 
         return array($orders, $pages);
     }
@@ -204,7 +206,7 @@ class Packeteryclass
      * @param array $orders
      * @return array
      */
-    public static function loadWeightToOrders(array $orders)
+    public static function addDynamicDataToOrders(array $orders)
     {
         if ($orders) {
             foreach ($orders as $index => $order) {
@@ -212,8 +214,7 @@ class Packeteryclass
                     $orderInstance = new \Order($order['id_order']);
                     $order['weight'] = Converter::getKilograms($orderInstance->getTotalWeight());
                 }
-                // todo 405 rename method or save validation result
-                $order['address_validated'] = (bool) $order['zip'];
+                $order['address_validated'] = AddressTools::hasValidatedAddress($order);
                 $orders[$index] = $order;
             }
         }
@@ -294,10 +295,11 @@ class Packeteryclass
                 'Note' => "",
             ];
             if ($packeteryOrder['is_ad']) {
-                if ($packeteryOrder['zip'] && $packeteryOrder['city'] && $packeteryOrder['street']) {
+                if (AddressTools::hasValidatedAddress($packeteryOrder)) {
                     $data[$order_id]['ZIP'] = $packeteryOrder['zip'];
                     $data[$order_id]['City'] = $packeteryOrder['city'];
-                    $data[$order_id]['Street'] = $packeteryOrder['street'];
+                    $data[$order_id]['Street'] = ($packeteryOrder['street'] ?: $packeteryOrder['city']);
+                    $data[$order_id]['House Number'] = $packeteryOrder['house_number'];
                 } else {
                     $data[$order_id]['ZIP'] = str_replace(' ', '', $address['postcode']);
                     $data[$order_id]['City'] = $address['city'];

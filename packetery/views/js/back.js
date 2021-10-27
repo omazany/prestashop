@@ -36,9 +36,9 @@ $(document).ready(function(){
 	// starting with 0 before calling psTableAddCheckbox; see drawOrdersRow
 	var orderColumnId = 0;
 	var orderColumnCod = 4;
-	var orderColumnExported = 7;
-	var orderColumnTracking = 8;
-	var orderColumnWeight = 9;
+	var orderColumnExported = 8;
+	var orderColumnTracking = 9;
+	var orderColumnWeight = 10;
 
 	tools = {
 		/*Pagination*/
@@ -809,9 +809,9 @@ $(document).ready(function () {
 		};
 		$widgetHdButton.on('click', function (event) {
 			event.preventDefault();
-			PacketaHD.Widget.pick(widgetHdOptionsData['apiKey'], function (address) {
-				if (address !== null) {
-					address = address.address;
+			PacketaHD.Widget.pick(widgetHdOptionsData['apiKey'], function (result) {
+				if (result !== null && result.address !== null) {
+					var address = result.address;
 					$('.packetery form input[name="address"]').val(JSON.stringify(address));
 					$('.packetery-street').text(address.street + ' ' + address.houseNumber);
 					$('.packetery-city').text(address.city);

@@ -43,7 +43,7 @@ switch (Tools::getValue('action')) {
         $orderRepository = new \Packetery\Order\OrderRepository(Db::getInstance());
         $module = new Packetery();
         $orderAjax = new \Packetery\Order\Ajax($module, $orderRepository);
-        echo $orderAjax->widgetSaveOrderAddress();
+        $orderAjax->widgetSaveOrderAddress();
         break;
     default:
         exit;

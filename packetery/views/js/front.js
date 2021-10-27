@@ -61,6 +61,7 @@ function PacketeryCheckoutModulesManager() {
     }
 }
 var packeteryModulesManager = new PacketeryCheckoutModulesManager();
+var $selectedInput;
 
 $(document).ready(function ()
 {
@@ -92,7 +93,7 @@ window.initializePacketaWidget = function ()
     var app_identity = $('#app_identity').val(); // Get module version for widgets
 
     var module = packeteryModulesManager.detectModule();
-    var $selectedInput = module.getSelectedInput();
+    $selectedInput = module.getSelectedInput();
     if ($selectedInput.length === 0) {
         $(module.getExtraContentSelector()).hide();
         return;
@@ -179,29 +180,31 @@ window.initializePacketaWidget = function ()
         if (customerZip) {
             widgetOptions.postCode = customerZip;
         }
-        PacketaHD.Widget.pick(packetaApiKey, function (address) {
+        PacketaHD.Widget.pick(packetaApiKey, function (result) {
             var $selectedDeliveryOption = module.getSelectedInput();
             $widgetParent = packeteryModulesManager.getWidgetParent($selectedDeliveryOption);
 
-            if (address != null) {
+            if (result != null && result.address != null) {
                 // there is also property packetaWidgetMessage which is true
-                address = address.address;
+                var address = result.address;
                 var $addressValidationResult = $widgetParent.find('.address-validation-result');
                 if (address.country === country) {
-                    console.error(address);
                     packetery.widgetSaveOrderAddress(address);
                     $widgetParent.find('#addressValidated').val(true);
                     $addressValidationResult.addClass('address-validated');
                     $addressValidationResult.text($widgetParent.find('#addressValidatedMessage').val());
+                    $widgetParent.find('.picked-delivery-place').html(
+                        (address.street ? address.street : address.city) + ' ' + address.houseNumber +
+                        ', ' + address.city + ', ' + address.postcode);
                     module.enableSubmitButton();
-                } else if (tools.isAddressValidationUnsatisfied($widgetParent)) {
+                } else {
                     $widgetParent.find('#addressValidated').val(false);
                     $addressValidationResult.removeClass('address-validated');
-                    $addressValidationResult.text($widgetParent.find('#addressNotValidatedMessage').val());
-                    module.disableSubmitButton();
+                    $addressValidationResult.text($widgetParent.find('#countryDiffersMessage').val());
+                    if (tools.isAddressValidationUnsatisfied($widgetParent)) {
+                        module.disableSubmitButton();
+                    }
                 }
-            } else if (tools.isAddressValidationUnsatisfied($widgetParent)) {
-                module.disableSubmitButton();
             }
         }, widgetOptions);
     });
@@ -241,7 +244,10 @@ tools = {
                     }
                 }
             }
-            if ($extra.find('#open-packeta-widget-hd').length && tools.isAddressValidationUnsatisfied($extra)) {
+            if ($extra.is(':visible') &&
+                $extra.find('#open-packeta-widget-hd').length &&
+                tools.isAddressValidationUnsatisfied($extra)
+            ) {
                 module.disableSubmitButton();
             }
         });
@@ -265,6 +271,7 @@ tools = {
             }
 
             if ($this.is(':checked')) {
+                $selectedInput = $this;
                 var $wrapper = $extra.closest(module.getExtraContentSelector());
                 setTimeout(function () {
                     if ($wrapper.is(':hidden')) {
@@ -333,9 +340,6 @@ packetery = {
             },
             beforeSend: function () {
                 $("body").toggleClass("wait");
-            },
-            success: function (msg) {
-                return true;
             },
             complete: function () {
                 $("body").toggleClass("wait");

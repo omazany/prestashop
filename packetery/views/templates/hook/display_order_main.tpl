@@ -30,7 +30,13 @@
                 <form action="{$returnUrl}" method="post">
                     <p>
                         <a href="" class="btn btn-outline-secondary btn-default open-packeta-hd-widget"
-                           data-widget-options="{$widgetOptions|@json_encode|escape}">{l s='Change validated delivery address' mod='packetery'}</a>
+                           data-widget-options="{$widgetOptions|@json_encode|escape}">
+                            {if isset($validatedAddress) && $validatedAddress['zip']}
+                                {l s='Change validated delivery address' mod='packetery'}
+                            {else}
+                                {l s='Set validated delivery address' mod='packetery'}
+                            {/if}
+                        </a>
 
                         <input type="hidden" name="order_id" value="{$orderId|intval}">
                         <input type="hidden" name="address">

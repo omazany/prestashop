@@ -66,6 +66,7 @@ $_MODULE['<{packetery}prestashop>packetery_f1111e5bc2fc07a2985e5273341fbd7b'] = 
 $_MODULE['<{packetery}prestashop>packetery_47838d234bae5339a17c704bb605d01a'] = 'U objednávky není vybrané žádné výdejní místo. Zásilku nebude možné exportovat do Zásilkovny.';
 $_MODULE['<{packetery}prestashop>packetery_44e05cef9b23421538483520e6cc0934'] = 'Vybraná adresa pro doručení je v jiné zemi, než je země doručení objednávky.';
 $_MODULE['<{packetery}prestashop>packetery_6f95966a9adeb388ffaaa27ca7829365'] = 'Vybrané výdejní místo';
+$_MODULE['<{packetery}prestashop>packetery_4419b3cde4f11f7928400c2582e7601b'] = 'Validace objednávky selhala, více informací můžete nalézt v logu PrestaShopu.';
 $_MODULE['<{packetery}prestashop>packetery_492bd00238d3ccba86931c7d815092be'] = 'Pro ověření adresy použijte prosím widget.';
 $_MODULE['<{packetery}prestashop>packetery_b18ce70ed15a7a117141d6ee14f9138c'] = 'Výdejní místo bylo úspěšně změněno.';
 $_MODULE['<{packetery}prestashop>packetery_f1111e5bc2fc07a2985e5273341fbd7b'] = 'Výdejní místo se nepodařilo změnit.';
@@ -89,6 +90,7 @@ $_MODULE['<{packetery}prestashop>display_order_main_963ab0bbea32f1f9d19afb00d08b
 $_MODULE['<{packetery}prestashop>display_order_main_e25b163360646e8f71af8a8ee0fad1a3'] = 'Kraj';
 $_MODULE['<{packetery}prestashop>display_order_main_8c578de37278ada488d763ea86c5cf20'] = 'GPS';
 $_MODULE['<{packetery}prestashop>display_order_main_880aa0400f544314b130331043ae7494'] = 'Změnit ověřenou doručovací adresu';
+$_MODULE['<{packetery}prestashop>display_order_main_413f30130d000fc25023de3c318ecce3'] = 'Nastavit ověřenou doručovací adresu';
 $_MODULE['<{packetery}prestashop>display_order_main_c9cc8cce247e49bae79f15173ce97354'] = 'Uložit';
 $_MODULE['<{packetery}prestashop>display_order_main_ee5c5839980b47f1893220655a3de0fb'] = 'Výdejní místo';
 $_MODULE['<{packetery}prestashop>display_order_main_9aa49c5a01dab7e49c73343b47e995a2'] = 'Vyberte prosím výdejní místo';
