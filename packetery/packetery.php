@@ -110,6 +110,7 @@ class Packetery extends CarrierModule
         }
         Configuration::updateValue('PACKETERY_LABEL_FORMAT', 'A7 on A4');
         Configuration::updateValue('PACKETERY_ADDRESS_VALIDATION', 'none');
+        Configuration::updateValue('PACKETERY_ORDERS_PER_PAGE', 50);
 
         // backup possible old order table
         if (count($db->executeS('SHOW TABLES LIKE "' . _DB_PREFIX_ . 'packetery_order"')) > 0) {
@@ -162,6 +163,7 @@ class Packetery extends CarrierModule
             !Configuration::deleteByName('PACKETERY_ESHOP_ID') ||
             !Configuration::deleteByName('PACKETERY_LABEL_FORMAT') ||
             !Configuration::deleteByName('PACKETERY_ADDRESS_VALIDATION') ||
+            !Configuration::deleteByName('PACKETERY_ORDERS_PER_PAGE') ||
             !Configuration::deleteByName('PACKETERY_LAST_BRANCHES_UPDATE')
         ) {
             return false;
@@ -254,6 +256,7 @@ class Packetery extends CarrierModule
             'PACKETERY_ESHOP_ID',
             'PACKETERY_LABEL_FORMAT',
             'PACKETERY_ADDRESS_VALIDATION',
+            'PACKETERY_ORDERS_PER_PAGE',
             'PACKETERY_LAST_BRANCHES_UPDATE',
         ]);
 
